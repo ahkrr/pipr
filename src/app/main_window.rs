@@ -104,12 +104,21 @@ impl App {
     }
 
     fn open_autocomplete_menu(&mut self) {
-        let current_line = self.input_state.current_line().to_string();
+        let current_line = self.input_state.current_line();
         let hovered_word = current_line.word_at_idx(self.input_state.cursor_col);
         let hovered_char = self.input_state.hovered_char();
         if hovered_char.is_none() || hovered_char == Some(" ") || hovered_char == Some("") {
             let hovered_word = hovered_word.unwrap_or_default();
-            if let Some(completions) = provide_path_autocomplete(hovered_word) {
+            let mut completions = provide_path_autocomplete(hovered_word).unwrap_or_default();
+            {
+                // get custom completions
+                completions.extend(
+                    self.user_provided_completion_candidates
+                        .iter()
+                        .filter(|s| s.starts_with(hovered_word))
+                        .map(|s| s.clone()),
+                );
+
                 if completions.len() == 1 {
                     let completed_value = completions.first().unwrap().trim_start_matches(hovered_word);
                     self.input_state.insert_at_cursor(completed_value, true);
@@ -174,7 +183,19 @@ impl App {
             KeyCode::F(5) => self.open_helpviewer(),
             KeyCode::F(6) => self.open_outputviewer(),
             KeyCode::F(7) => self.do_cache_command_part(),
-
+            KeyCode::F(8) => {
+                //save current output as userprovided compeletion-candidates
+                let mut candidates: Vec<String> = Vec::with_capacity((self.command_output.len() + 1) / 32);
+                candidates.extend(
+                    self.command_output
+                        .split_ascii_whitespace()
+                        .filter(|s| s.starts_with("--"))
+                        .map(|s| s.into()),
+                );
+                candidates.sort();
+                candidates.dedup();
+                self.user_provided_completion_candidates = candidates;
+            }
             KeyCode::Char('s') if control_pressed => self.bookmarks.toggle_entry(self.input_state.content_to_commandentry()),
             KeyCode::Char('p') if control_pressed => self.apply_history_prev(),
             KeyCode::Char('n') if control_pressed => self.apply_history_next(),

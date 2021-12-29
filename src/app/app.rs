@@ -79,6 +79,7 @@ pub struct App {
     pub opened_key_select_menu: Option<KeySelectMenu<KeySelectMenuType>>,
     pub raw_mode: bool,
     pub autocomplete_state: Option<AutocompleteState>,
+    pub user_provided_completion_candidates: Vec<String>,
 
     /// Part of a command can be cached, so it will not be reevluated on every execution.
     pub cached_command_part: Option<CachedCommandPart>,
@@ -114,6 +115,7 @@ impl App {
             cached_command_part: None,
             opened_key_select_menu: None,
             should_jump_to_other_cmd: None,
+            user_provided_completion_candidates: Vec::new(),
             execution_handler,
             raw_mode,
             config,
